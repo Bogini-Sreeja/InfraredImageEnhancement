@@ -1,0 +1,18 @@
+# Python virtual environment
+venv/
+
+# Python cache files
+__pycache__/
+*.pyc
+
+# Uploaded user images
+uploads/
+
+# Generated/output images
+outputs/
+
+# Environment variables
+.env
+
+# Trained model files
+models/*.pth
