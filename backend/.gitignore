@@ -10,9 +10,18 @@ uploads/
 
 # Generated/output images
 outputs/
+test_results/
 
 # Environment variables
 .env
 
 # Trained model files
 models/*.pth
+models/*.pt
+
+# Dataset files
+*.tif
+*.tiff
+
+# Training plots
+models/*.png

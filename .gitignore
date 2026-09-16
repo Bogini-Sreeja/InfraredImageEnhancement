@@ -1,0 +1,19 @@
+# Datasets
+dataset/
+dataset_raw/
+dataset_split/
+
+# New dataset experiments
+dataset_raw_new/
+dataset_new/
+dataset_new_split/
+
+# Baseline files
+baseline/
+
+# Python cache
+__pycache__/
+*.pyc
+
+# Node
+node_modules/

@@ -1,3 +1,4 @@
+from preprocessing.colorization import colorize_image
 from fastapi import FastAPI, UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
@@ -8,21 +9,35 @@ import shutil
 from preprocessing.preprocess import preprocess_image
 from preprocessing.enhance import enhance_image
 from preprocessing.super_resolution import super_resolve_image
-from preprocessing.colorization import colorize_image
 
 
-# =========================================
-# CREATE FASTAPI APP
-# =========================================
+# --------------------------------------------------
+# BASE DIRECTORIES
+# --------------------------------------------------
+
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+
+UPLOAD_DIR = os.path.join(BASE_DIR, "uploads")
+OUTPUT_DIR = os.path.join(BASE_DIR, "outputs")
+
+os.makedirs(UPLOAD_DIR, exist_ok=True)
+os.makedirs(OUTPUT_DIR, exist_ok=True)
+
+
+# --------------------------------------------------
+# FASTAPI APP
+# --------------------------------------------------
 
 app = FastAPI(
-    title="Infrared Image Enhancement API"
+    title="Infrared Image Enhancement API",
+    description="API for infrared image preprocessing, enhancement and super-resolution",
+    version="1.0"
 )
 
 
-# =========================================
+# --------------------------------------------------
 # CORS
-# =========================================
+# --------------------------------------------------
 
 app.add_middleware(
     CORSMiddleware,
@@ -33,27 +48,9 @@ app.add_middleware(
 )
 
 
-# =========================================
-# DIRECTORIES
-# =========================================
-
-UPLOAD_DIR = "uploads"
-OUTPUT_DIR = "outputs"
-
-os.makedirs(
-    UPLOAD_DIR,
-    exist_ok=True
-)
-
-os.makedirs(
-    OUTPUT_DIR,
-    exist_ok=True
-)
-
-
-# =========================================
-# SERVE OUTPUT IMAGES
-# =========================================
+# --------------------------------------------------
+# STATIC OUTPUT FILES
+# --------------------------------------------------
 
 app.mount(
     "/outputs",
@@ -62,221 +59,152 @@ app.mount(
 )
 
 
-# =========================================
+# --------------------------------------------------
 # HOME
-# =========================================
+# --------------------------------------------------
 
 @app.get("/")
 def home():
-
     return {
         "message": "Infrared Image Enhancement API is running"
     }
 
 
-# =========================================
-# STEP 1 — IMAGE PREPROCESSING
-# =========================================
+# --------------------------------------------------
+# PREPROCESSING
+# --------------------------------------------------
 
 @app.post("/preprocess")
-async def preprocess(
-    file: UploadFile = File(...)
-):
+async def preprocess(file: UploadFile = File(...)):
 
-    # Save uploaded image
     input_path = os.path.join(
         UPLOAD_DIR,
         file.filename
     )
 
-    with open(
-        input_path,
-        "wb"
-    ) as buffer:
+    with open(input_path, "wb") as buffer:
+        shutil.copyfileobj(file.file, buffer)
 
-        shutil.copyfileobj(
-            file.file,
-            buffer
-        )
+    processed_filename = f"processed_{file.filename}"
 
-    # Create processed filename
-    processed_filename = (
-        f"processed_{file.filename}"
-    )
-
-    # Output path
     output_path = os.path.join(
         OUTPUT_DIR,
         processed_filename
     )
 
-    # Run preprocessing
     preprocess_image(
         input_path,
         output_path
     )
 
     return {
-        "message":
-            "Image preprocessing completed",
-
-        "filename":
-            processed_filename,
-
-        "url":
-            f"/outputs/{processed_filename}"
+        "message": "Image preprocessing completed",
+        "filename": processed_filename,
+        "url": f"/outputs/{processed_filename}"
     }
 
 
-# =========================================
-# STEP 2 — IMAGE ENHANCEMENT
-# =========================================
+# --------------------------------------------------
+# ENHANCEMENT
+# --------------------------------------------------
 
 @app.post("/enhance")
-async def enhance(
-    filename: str
-):
+async def enhance(filename: str):
 
-    # Path of preprocessed image
     input_path = os.path.join(
         OUTPUT_DIR,
         filename
     )
 
-    # Check whether image exists
     if not os.path.exists(input_path):
-
         return {
-            "error":
-                "Preprocessed image not found"
+            "error": "Preprocessed image not found"
         }
 
-    # Enhanced filename
-    enhanced_filename = (
-        f"enhanced_{filename}"
-    )
+    enhanced_filename = f"enhanced_{filename}"
 
-    # Output path
     output_path = os.path.join(
         OUTPUT_DIR,
         enhanced_filename
     )
 
-    # Run enhancement
     enhance_image(
         input_path,
         output_path
     )
 
     return {
-        "message":
-            "Image enhancement completed",
-
-        "filename":
-            enhanced_filename,
-
-        "url":
-            f"/outputs/{enhanced_filename}"
+        "message": "Image enhancement completed",
+        "filename": enhanced_filename,
+        "url": f"/outputs/{enhanced_filename}"
     }
 
 
-# =========================================
-# STEP 3 — SUPER RESOLUTION
-# =========================================
+# --------------------------------------------------
+# SUPER RESOLUTION
+# --------------------------------------------------
 
 @app.post("/super-resolution")
-async def super_resolution(
-    filename: str
-):
+async def super_resolution(filename: str):
 
-    # Path of enhanced image
     input_path = os.path.join(
         OUTPUT_DIR,
         filename
     )
 
-    # Check whether image exists
     if not os.path.exists(input_path):
-
         return {
-            "error":
-                "Enhanced image not found"
+            "error": "Enhanced image not found"
         }
 
-    # Super-resolution filename
-    sr_filename = (
-        f"sr_{filename}"
-    )
+    sr_filename = f"sr_{filename}"
 
-    # Output path
     output_path = os.path.join(
         OUTPUT_DIR,
         sr_filename
     )
 
-    # Run super-resolution
     super_resolve_image(
         input_path,
         output_path
     )
 
     return {
-        "message":
-            "Super-resolution completed",
-
-        "filename":
-            sr_filename,
-
-        "url":
-            f"/outputs/{sr_filename}"
+        "message": "Super-resolution completed",
+        "filename": sr_filename,
+        "url": f"/outputs/{sr_filename}"
     }
-# =========================================
-# STEP 4 — RGB COLORIZATION
-# =========================================
+# --------------------------------------------------
+# RGB COLORIZATION
+# --------------------------------------------------
 
 @app.post("/colorize")
-async def colorize(
-    filename: str
-):
+async def colorize(filename: str):
 
-    # Path of super-resolved image
     input_path = os.path.join(
         OUTPUT_DIR,
         filename
     )
 
-    # Check whether image exists
     if not os.path.exists(input_path):
-
         return {
-            "error":
-                "Super-resolved image not found"
+            "error": "Super-resolved image not found"
         }
 
-    # Colorized filename
-    colorized_filename = (
-        f"colorized_{filename}"
-    )
+    colorized_filename = f"colorized_{filename}"
 
-    # Output path
     output_path = os.path.join(
         OUTPUT_DIR,
         colorized_filename
     )
 
-    # Run colorization
     colorize_image(
         input_path,
         output_path
     )
 
     return {
-        "message":
-            "RGB colorization completed",
-
-        "filename":
-            colorized_filename,
-
-        "url":
-            f"/outputs/{colorized_filename}"
+        "message": "RGB colorization completed",
+        "filename": colorized_filename,
+        "url": f"/outputs/{colorized_filename}"
     }

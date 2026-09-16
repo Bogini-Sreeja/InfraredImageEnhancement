@@ -1,43 +1,23 @@
 import cv2
-import os
+import numpy as np
 
 
 def preprocess_image(input_path, output_path):
-
-    # Read image
-    image = cv2.imread(input_path)
+    image = cv2.imread(input_path, cv2.IMREAD_GRAYSCALE)
 
     if image is None:
-        raise ValueError("Unable to read image")
+        raise ValueError("Could not read input image")
 
-    # 1. Convert to grayscale
-    gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+    image = np.nan_to_num(image, nan=0.0)
 
-    # 2. Resize image
-    resized = cv2.resize(
-        gray,
-        None,
-        fx=2,
-        fy=2,
-        interpolation=cv2.INTER_CUBIC
-    )
-
-    # 3. Normalize image
-    normalized = cv2.normalize(
-        resized,
+    image = cv2.normalize(
+        image,
         None,
         0,
         255,
         cv2.NORM_MINMAX
-    )
+    ).astype(np.uint8)
 
-    # 4. Histogram equalization
-    equalized = cv2.equalizeHist(normalized)
-
-    # Save result
-    cv2.imwrite(
-        output_path,
-        equalized
-    )
+    cv2.imwrite(output_path, image)
 
     return output_path
